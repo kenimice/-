@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube動画の管理</title>
+    <style>
+        body { background-color: black; color: white; font-family: Arial, sans-serif; }
+        h1 { text-align: center; }
+        .upload-form { text-align: center; margin: 20px; }
+        .video-container { display: flex; justify-content: center; margin-top: 20px; }
+        .video-item { margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>YouTube動画の管理</h1>
+    <div class="upload-form">
+        <input type="file" id="videoFile" accept="video/*">
+        <button onclick="uploadVideo()">動画をアップロード</button>
+    </div>
+
+    <div class="video-container" id="videoContainer"></div>
+
+    <script>
+        async function uploadVideo() {
+            const fileInput = document.getElementById('videoFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("動画ファイルを選択してください。");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                displayVideo(result.videoUrl);
+            } else {
+                alert("動画のアップロードに失敗しました。");
+            }
+        }
+
+        function displayVideo(videoUrl) {
+            const container = document.getElementById('videoContainer');
+            const videoElement = document.createElement('div');
+            videoElement.classList.add('video-item');
+            videoElement.innerHTML = `
+                <video width="320" height="240" controls>
+                    <source src="${videoUrl}" type="video/mp4">
+                    お使いのブラウザは動画再生に対応していません。
+                </video>
+                <button onclick="deleteVideo('${videoUrl}')">削除</button>
+            `;
+            container.appendChild(videoElement);
+        }
+
+        async function deleteVideo(videoUrl) {
+            const response = await fetch('/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ videoUrl })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert('動画が削除されました。');
+                window.location.reload();
+            } else {
+                alert('動画の削除に失敗しました。');
+            }
+        }
+    </script>
+</body>
+</html>
